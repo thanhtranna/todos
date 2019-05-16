@@ -1,0 +1,14 @@
+
+appname: todos
+port: 8282
+logger:
+    use: zapLogger
+    environment: dev
+    loglevel: debug
+    filename: main.log
+db:
+    use: mysql
+    mysql:
+        userName: root
+        password: password
+        database: todos
