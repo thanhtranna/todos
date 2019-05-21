@@ -27,10 +27,11 @@ func (l loginCtrl) Signin(ctx *gin.Context) {
 		return
 	}
 
-	if ok := l.svc.Signin(lg.Email, lg.Password); !ok {
-		ctx.JSON(http.StatusForbidden, common.ResponseFail(nil))
+	token, err := l.svc.Signin(lg.Email, lg.Password)
+	if err != nil {
+		ctx.JSON(http.StatusForbidden, common.ResponseFail(err.Error()))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, common.ResponseSuccess(nil))
+	ctx.JSON(http.StatusOK, common.ResponseSuccess(token))
 }

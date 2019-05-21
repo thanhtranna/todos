@@ -30,47 +30,47 @@ func (u *todoRepo) Delete(id string, userId string) error {
 	return nil
 }
 
-func (u *todoRepo) GetAll() ([]*todo.Todo, error) {
+func (u *todoRepo) GetAll(userId string) ([]*todo.Todo, error) {
 	u.log.Debug("get all the todos")
 
 	todos := make([]*todo.Todo, 0)
-	err := u.db.Find(&todos).Error
+	err := u.db.Find(&todos).Where("user_id = ?", userId).Error
 	if err != nil {
 		u.log.Debug("no single todo found")
 		return nil, err
 	}
-	return users, nil
+	return todos, nil
 }
 
-func (u *todoRepo) GetByID(id string) (*user.User, error) {
-	u.log.Debugf("get user details by id : %s", id)
+func (u *todoRepo) GetByID(id string, userId string) (*todo.Todo, error) {
+	u.log.Debugf("get todo details by id : %s", id)
 
-	user := &user.User{}
-	err := u.db.Where("user_id = ?", id).First(&user).Error
+	todo := &todo.Todo{}
+	err := u.db.Where("user_id = ? AND id = ?", userId, id).First(&todo).Error
 	if err != nil {
-		u.log.Errorf("user not found with id : %s, reason : %v", id, err)
+		u.log.Errorf("todo not found with id : %s, reason : %v", id, err)
 		return nil, err
 	}
-	return user, nil
+	return todo, nil
 }
 
-func (u *todoRepo) Store(usr *user.User) error {
-	u.log.Debugf("creating the user with email : %v", usr.Email)
+func (u *todoRepo) Store(todo *todo.Todo) error {
+	u.log.Debugf("creating a todo with user id : %v", todo.UserID)
 
-	err := u.db.Create(&usr).Error
+	err := u.db.Create(&todo).Error
 	if err != nil {
-		u.log.Errorf("error while creating the user, reason : %v", err)
+		u.log.Errorf("error while creating a todo, reason : %v", err)
 		return err
 	}
 	return nil
 }
 
-func (u *todoRepo) Update(usr *user.User) error {
-	u.log.Debugf("updating the user, user_id : %v", usr.ID)
+func (u *todoRepo) Update(tdo *todo.Todo) error {
+	u.log.Debugf("updating the todo, user_id : %v", tdo.UserID)
 
-	err := u.db.Model(&usr).Updates(user.User{FirstName: usr.FirstName, LastName: usr.LastName, Password: usr.Password}).Error
+	err := u.db.Model(&tdo).Updates(todo.Todo{Content: tdo.Content}).Error
 	if err != nil {
-		u.log.Errorf("error while updating the user, reason : %v", err)
+		u.log.Errorf("error while updating a todo, reason : %v", err)
 		return err
 	}
 	return nil

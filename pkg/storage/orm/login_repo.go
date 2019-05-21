@@ -1,33 +1,43 @@
 package orm
 
 import (
+	"errors"
+
 	"todo-lists/pkg/logger"
 	"todo-lists/pkg/login"
+	"todo-lists/pkg/user"
+	"todo-lists/pkg/auth"
 
 	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type loginRepo struct {
 	db  *gorm.DB
 	log logger.LogInfoFormat
+	authSrv auth.AuthService
 }
 
-func NewLoginRepo(db *gorm.DB, log logger.LogInfoFormat) login.Repository {
-	return &loginRepo{db, log}
+func NewLoginRepo(db *gorm.DB, log logger.LogInfoFormat, authSrv auth.AuthService) login.Repository {
+	return &loginRepo{db, log, authSrv}
 }
 
-func (l *loginRepo) Signin(ln *login.Login) bool {
-	var login login.Login
-
-	err := l.db.Raw("SELECT email, password FROM users WHERE email = ? AND password = ?", ln.Email, ln.Password).Scan(&login).Error
+func (l *loginRepo) Signin(ln *login.Login) (string, error) {
+	user := &user.User{}
+	err := l.db.Where("email = ?", ln.Email).First(&user).Error
 	if err != nil {
 		l.log.Errorf("signin failed with reason : %v", err)
-		return false
+		return "", errors.New("something went wrong")
 	}
 
-	if login.Email == ln.Email && login.Password == ln.Password {
-		return true
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(ln.Password)); err != nil {
+		return "", errors.New("password incorrect")
 	}
 
-	return false
+	token, err := l.authSrv.GenerateToken(user.Email, user.ID)
+	if err != nil {
+		return "", errors.New("something went wrong")
+	}
+
+	return token, nil
 }

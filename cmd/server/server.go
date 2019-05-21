@@ -6,6 +6,7 @@ import (
 	"todo-lists/pkg/config"
 	"todo-lists/pkg/logger"
 	"todo-lists/pkg/user"
+	"todo-lists/pkg/todo"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -34,9 +35,8 @@ func (ds *dserver) SetupDB() error {
 		return err
 	}
 
-	// db.Exec("SET search_path TO todos")
 	db.AutoMigrate(&user.User{})
-	// db.AutoMigrate(&patient.Patient{})
+	db.AutoMigrate(&todo.Todo{})
 	return nil
 }
 

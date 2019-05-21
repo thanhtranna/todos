@@ -8,6 +8,7 @@ import (
 	"todo-lists/pkg/user"
 
 	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userRepo struct {
@@ -55,9 +56,37 @@ func (u *userRepo) GetByID(id string) (*user.User, error) {
 }
 
 func (u *userRepo) Store(usr *user.User) error {
-	u.log.Debugf("creating the user with email : %v", usr.Email)
+	fmt.Println("tao user")
+	fmt.Println("asdasd", usr.Email)
+	user := &user.User{}
+	err := u.db.Where("email = ?", usr.Email).First(&user).Error
 
-	err := u.db.Create(&usr).Error
+	fmt.Println("asdasd ", user.ID)
+	fmt.Println("asdasd ", user.Email)
+
+	fmt.Println("err ", err.Error())
+
+	if err != nil && err.Error() != "record not found" {
+		fmt.Println("dkmmm")
+		return errors.New("please signin")
+	}
+
+	if user.Email != "" {
+		return errors.New("user exist")
+	}
+
+	fmt.Println("tao user voi password ", user.Password)
+
+	u.log.Debugf("creating the user with email : %v", usr.Email)
+	// Generates a hashed version of our password
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New(fmt.Sprintf("error hashing password: %v", err))
+	}
+	usr.Password = string(hashedPass)
+	
+	fmt.Println("asdasdas", string(hashedPass))
+	err = u.db.Create(&usr).Error
 	if err != nil {
 		u.log.Errorf("error while creating the user, reason : %v", err)
 		return err

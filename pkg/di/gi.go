@@ -3,10 +3,13 @@ package di
 import (
 	"todo-lists/pkg/config"
 	"todo-lists/pkg/logger"
+	"todo-lists/pkg/auth"
 	"todo-lists/pkg/login"
+	// "todo-lists/pkg/middleware"
 	"todo-lists/pkg/storage"
 	"todo-lists/pkg/storage/orm"
 	"todo-lists/pkg/user"
+	"todo-lists/pkg/todo"
 
 	"go.uber.org/dig"
 )
@@ -23,6 +26,12 @@ func BuildContainer() *dig.Container {
 	// logger
 	container.Provide(logger.NewLogger)
 
+	// auth
+	container.Provide(auth.NewAuthService)
+
+	// // middleware
+	// container.Provide(middleware.NewApiMiddleware)
+
 	// login
 	container.Provide(orm.NewLoginRepo)
 	container.Provide(login.NewLoginService)
@@ -30,6 +39,10 @@ func BuildContainer() *dig.Container {
 	// user
 	container.Provide(orm.NewUserRepo)
 	container.Provide(user.NewUserService)
+
+	// todo
+	container.Provide(orm.NewTodoRepo)
+	container.Provide(todo.NewTodoService)
 	return container
 }
 

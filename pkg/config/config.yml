@@ -12,3 +12,5 @@ db:
         userName: root
         password: password
         database: todos
+jwt:
+    key: thisisascretkey

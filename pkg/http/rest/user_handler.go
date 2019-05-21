@@ -49,7 +49,11 @@ func (u *userCtrl) Store(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
 		return
 	}
-	u.svc.Store(&user)
+	err := u.svc.Store(&user)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
 	ctx.JSON(http.StatusCreated, common.ResponseSuccess(user))
 }
 

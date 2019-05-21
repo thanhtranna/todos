@@ -4,7 +4,7 @@ type Service interface {
 	Delete(id string, userId string) error
 	GetAll(userId string) ([]*Todo, error)
 	GetByID(id string, userId string) (*Todo, error)
-	Store(u *Todo, userId string) error
+	Store(u *Todo) error
 	Update(u *Todo) error
 }
 
@@ -22,8 +22,8 @@ func (svc *todoService) Delete(id, userId string) error { return svc.repo.Delete
 
 func (svc *todoService) GetAll(userId string) ([]*Todo, error) { return svc.repo.GetAll(userId) }
 
-func (svc *todoService) GetByID(id, userId string) (*User, error) { return svc.repo.GetByID(id, userId) }
+func (svc *todoService) GetByID(id, userId string) (*Todo, error) { return svc.repo.GetByID(id, userId) }
 
-func (svc *todoService) Store(u *Todo, userId string) error { return svc.repo.Store(u, userId) }
+func (svc *todoService) Store(u *Todo) error { return svc.repo.Store(u) }
 
-func (svc *todoService) Update(u *Todo, userId string) error { return svc.repo.Update(u, userId) }
+func (svc *todoService) Update(u *Todo) error { return svc.repo.Update(u) }

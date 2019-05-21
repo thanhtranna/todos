@@ -19,6 +19,9 @@ type Config struct {
 			Database string `default:"todos"`
 		}
 	}
+	JWT struct {
+		Key		string `default:"thisisascretkey"`
+	}
 }
 
 func NewConfig() (*Config, error) {
