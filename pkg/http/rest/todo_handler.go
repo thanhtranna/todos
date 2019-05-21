@@ -1,13 +1,14 @@
 package rest
 
 import (
+	"net/http"
+
 	"todo-lists/pkg/common"
 	"todo-lists/pkg/logger"
 	"todo-lists/pkg/todo"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
-	// uuid "github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 type todoCtrl struct {
@@ -19,67 +20,129 @@ func NewTodoCtrl(log logger.LogInfoFormat, svc todo.Service) *todoCtrl {
 	return &todoCtrl{log, svc}
 }
 
-func (u *todoCtrl) GetAll(ctx *gin.Context) {
-	users, err := u.svc.GetAll("1234")
-	if len(users) == 0 || err != nil {
+func (t *todoCtrl) GetAll(ctx *gin.Context) {
+	userInfoData, ok := ctx.Get("userInfo")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("user not accept", nil))
+		return
+	}
+
+	page, limit := common.GetPagination(ctx)
+	skip := common.GetSkipValue(page, limit)
+	filter := common.FilterParam{
+		Limit: limit,
+		Page: page,
+		Offset:	skip,
+	}
+
+	userInfo := userInfoData.(common.UserInfo)
+
+	todos, err := t.svc.GetAll(userInfo.UserID, filter)
+	if err != nil {
 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
 		return
 	}
-	ctx.JSON(http.StatusOK, common.ResponseSuccess(users))
+	ctx.JSON(http.StatusOK, common.ResponseSuccess(todos))
 }
 
-// func (u *userCtrl) GetByID(ctx *gin.Context) {
-// 	id := ctx.Param("id")
-// 	if _, err := uuid.FromString(id); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
+func (t *todoCtrl) GetByID(ctx *gin.Context) {
+	userInfoData, ok := ctx.Get("userInfo")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("user not accept", nil))
+		return
+	}
+	id := ctx.Param("id")
+	if _, err := uuid.FromString(id); err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
 
-// 	user, err := u.svc.GetByID(id)
-// 	if user == nil || err != nil {
-// 		ctx.JSON(http.StatusNotFound, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
-// 	ctx.JSON(http.StatusOK, common.ResponseSuccess(user))
-// }
+	userInfo := userInfoData.(common.UserInfo)
 
-// func (u *userCtrl) Store(ctx *gin.Context) {
-// 	var user user.User
-// 	if err := ctx.ShouldBindJSON(&user); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
-// 	err := u.svc.Store(&user)
-// 	if err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
-// 	ctx.JSON(http.StatusCreated, common.ResponseSuccess(user))
-// }
+	user, err := t.svc.GetByID(id, userInfo.UserID)
+	if user == nil || err != nil {
+		ctx.JSON(http.StatusNotFound, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	ctx.JSON(http.StatusOK, common.ResponseSuccess(user))
+}
 
-// func (u *userCtrl) Update(ctx *gin.Context) {
-// 	id := ctx.Param("id")
-// 	if _, err := uuid.FromString(id); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
+func (t *todoCtrl) Store(ctx *gin.Context) {
+	userInfoData, ok := ctx.Get("userInfo")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("user not accept", nil))
+		return
+	}
 
-// 	var user user.User
-// 	if err := ctx.ShouldBindJSON(&user); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
-// 	user.ID = id
-// 	u.svc.Update(&user)
-// 	ctx.JSON(http.StatusOK, common.ResponseSuccess(user))
-// }
+	userInfo := userInfoData.(common.UserInfo)
+	var todo todo.Todo
+	if err := ctx.ShouldBindJSON(&todo); err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	todo.UserID = userInfo.UserID
+	err := t.svc.Store(&todo)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	ctx.JSON(http.StatusCreated, common.ResponseSuccess(todo))
+}
 
-// func (u *userCtrl) Delete(ctx *gin.Context) {
-// 	id := ctx.Param("id")
-// 	if _, err := uuid.FromString(id); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
-// 		return
-// 	}
-// 	u.svc.Delete(id)
-// 	ctx.JSON(http.StatusOK, common.ResponseSuccess(nil))
-// }
+func (t *todoCtrl) Update(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if _, err := uuid.FromString(id); err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+
+	var todo todo.Todo
+	if err := ctx.ShouldBindJSON(&todo); err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	if todo.ID != id {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("not owner", nil))
+		return
+	}
+
+	userInfoData, ok := ctx.Get("userInfo")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("user not accept", nil))
+		return
+	}
+
+	userInfo := userInfoData.(common.UserInfo)
+	if todo.UserID != userInfo.UserID {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("not owner", nil))
+		return
+	}
+	todo.UserID = userInfo.UserID
+	err := t.svc.Update(id, &todo)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	ctx.JSON(http.StatusOK, common.ResponseSuccess(todo))
+}
+
+func (t *todoCtrl) Delete(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if _, err := uuid.FromString(id); err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	userInfoData, ok := ctx.Get("userInfo")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError("user not accept", nil))
+		return
+	}
+
+	userInfo := userInfoData.(common.UserInfo)
+	err := t.svc.Delete(id, userInfo.UserID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, common.ResponseWithError(err.Error(), nil))
+		return
+	}
+	ctx.JSON(http.StatusOK, common.ResponseSuccess(nil))
+}

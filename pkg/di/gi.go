@@ -5,7 +5,6 @@ import (
 	"todo-lists/pkg/logger"
 	"todo-lists/pkg/auth"
 	"todo-lists/pkg/login"
-	// "todo-lists/pkg/middleware"
 	"todo-lists/pkg/storage"
 	"todo-lists/pkg/storage/orm"
 	"todo-lists/pkg/user"
@@ -28,9 +27,6 @@ func BuildContainer() *dig.Container {
 
 	// auth
 	container.Provide(auth.NewAuthService)
-
-	// // middleware
-	// container.Provide(middleware.NewApiMiddleware)
 
 	// login
 	container.Provide(orm.NewLoginRepo)

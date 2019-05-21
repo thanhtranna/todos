@@ -44,7 +44,7 @@ func (avc *authService) ParseToken(unparsedToken string) (bool, string) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return false, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return token.Header["kid"], nil
+		return []byte(avc.config.JWT.Key), nil
 	})
 
 	if err == nil && token.Valid {
