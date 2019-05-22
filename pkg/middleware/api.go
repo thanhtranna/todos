@@ -49,7 +49,7 @@ func (m *ApiMiddleware) VerifyToken(config *config.Config) gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		ctx.JSON(http.StatusUnauthorized, common.ResponseWithError(err.Error(), nil))
+		ctx.JSON(http.StatusUnauthorized, common.ResponseWithError("permission denied!", nil))
 		ctx.Abort()
 		return
 	}
